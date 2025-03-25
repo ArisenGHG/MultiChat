@@ -2,12 +2,6 @@ import java.net.*;
 import java.io.*;
 
 /**
- * Die Klasse ChatClient realisiert den Client f?r einen einfachen
- * Chat. Der Client verbindet sich mit einem ChatServer und liest dann 
- * wechselweise Eingaben vom Socket und gibt sie auf der Konsole aus
- * und wartet dann auf eine Eingabe von der Konsole und schickt sie
- * an den Server.
- * 
  * @author   Jonas, Jason
  * @version  2025-03-25
  */
