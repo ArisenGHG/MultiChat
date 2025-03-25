@@ -13,7 +13,8 @@ class MultiChatServer {
         while (true) {
             Socket clientSocket = serverSocket.accept();
             System.out.println("Verbunden mit " + clientSocket.getInetAddress().getHostName() + ".");
-            pool.execute(new ClientHandler(clientSocket));         }
+            pool.execute(new ClientHandler(clientSocket));         
+        }
     }
 }
 
@@ -22,6 +23,7 @@ class ClientHandler implements Runnable {
     private PrintWriter out;
     private BufferedReader in;
     private static final ConcurrentHashMap<Socket, PrintWriter> clientWriters = new ConcurrentHashMap<>();
+    private String username; // Benutzername des Clients
 
     public ClientHandler(Socket socket) {
         this.clientSocket = socket;
@@ -34,10 +36,15 @@ class ClientHandler implements Runnable {
             out = new PrintWriter(clientSocket.getOutputStream(), true);
             clientWriters.put(clientSocket, out); 
 
+            // Benutzername abfragen
+            out.println("Bitte geben Sie Ihren Benutzernamen ein: ");
+            username = in.readLine();
+            System.out.println("Benutzername gesetzt: " + username);
+
             String message;
             while ((message = in.readLine()) != null) {
-                System.out.println("Nachricht von " + clientSocket.getInetAddress().getHostName() + ": " + message);
-                broadcast(message);
+                System.out.println("Nachricht von " + username + ": " + message);
+                broadcast(username + ": " + message); // Benutzername in der Nachricht
             }
         } catch (IOException e) {
             System.out.println("Fehler bei der Kommunikation mit dem Client: " + e.getMessage());
@@ -48,7 +55,7 @@ class ClientHandler implements Runnable {
                 e.printStackTrace();
             }
             clientWriters.remove(clientSocket); 
-            System.out.println("Verbindung zu " + clientSocket.getInetAddress().getHostName() + " beendet.");
+            System.out.println("Verbindung zu " + username + " beendet.");
         }
     }
 
