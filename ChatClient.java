@@ -8,8 +8,8 @@ import java.io.*;
  * und wartet dann auf eine Eingabe von der Konsole und schickt sie
  * an den Server.
  * 
- * @author   Dr. Michael Janneck, Torsten Otto
- * @version  2023-06-28
+ * @author   Jonas, Jason
+ * @version  2025-03-25
  */
 class ChatClient 
 {
