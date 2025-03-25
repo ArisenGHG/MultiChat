@@ -1,56 +1,48 @@
 import java.net.*;
 import java.io.*;
 
-/**
- * @author   Jonas, Jason
- * @version  2025-03-25
- */
-class ChatClient 
-{
-    public static void main(String[] args) throws IOException 
-    {
-        String serverName = null;
-        if (args.length > 0) {
-            serverName = args[0];
-        } else {
-            serverName = "localhost"; // oder die IP-Adresse des Servers
-        }
-        
-        System.out.println("Öffne Verbindung zu " + serverName + " auf Port 5001.");
-        Socket verbindung = new Socket(serverName, 5001);
+public class MultiChatClient {
+    private String hostname;
+    private int port;
+    private PrintWriter out;
+    private BufferedReader in;
 
-        PrintWriter ausgang = new PrintWriter(verbindung.getOutputStream(), true);
-        BufferedReader eingang = new BufferedReader(new InputStreamReader(verbindung.getInputStream()));
-        BufferedReader stdIn = new BufferedReader(new InputStreamReader(System.in));
-        
-        // Benutzernamen abfragen
-        System.out.print("Bitte geben Sie Ihren Benutzernamen ein: ");
-        String benutzername = stdIn.readLine();
-        
-        System.out.println("Verbunden mit " + verbindung.getInetAddress().getHostName() + ".");
+    public MultiChatClient(String hostname, int port) {
+        this.hostname = hostname;
+        this.port = port;
+    }
 
-        while (true) {
-            // Lesen von der Konsole und Schreiben auf den Socket
-            System.out.print(benutzername + ": ");
-            String nachricht = stdIn.readLine();
-            if (nachricht == null) {
-                break;
-            } else {
-                ausgang.println(benutzername + ": " + nachricht); // Benutzername in der Nachricht
+    public void start() {
+        try (Socket socket = new Socket(hostname, port)) {
+            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            out = new PrintWriter(socket.getOutputStream(), true);
+            BufferedReader stdIn = new BufferedReader(new InputStreamReader(System.in));
+
+            String benutzername = in.readLine(); // Benutzername vom Server abfragen
+            System.out.println(benutzername); // Benutzername anzeigen
+
+            new Thread(() -> {
+                try {
+                    String nachricht;
+                    while ((nachricht = in.readLine()) != null) {
+                        System.out.println(nachricht);
+                    }
+                } catch (IOException e) {
+                    System.out.println("Fehler beim Lesen von Nachrichten: " + e.getMessage());
+                }
+            }).start();
+
+            String nachricht;
+            while ((nachricht = stdIn.readLine()) != null) {
+                out.println(nachricht); // Nachricht an den Server senden
             }
-
-            // Lesen vom Socket und Schreiben auf die Konsole
-            if ((nachricht = eingang.readLine()) == null) {
-                break;
-            } else {
-                System.out.println(nachricht);
-            }
+        } catch (IOException e) {
+            System.out.println("Fehler beim Verbinden zum Server: " + e.getMessage());
         }
-        System.out.println("Verbindung beendet.");
-        
-        stdIn.close();
-        ausgang.close();
-        eingang.close();
-        verbindung.close();
+    }
+
+    public static void main(String[] args) {
+        MultiChatClient client = new MultiChatClient("localhost", 5001);
+        client.start();
     }
 }

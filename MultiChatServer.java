@@ -60,7 +60,7 @@ class ClientHandler implements Runnable {
     }
 
     private void broadcast(String message) {
-        for (PrintWriter writer : clientWriters.values()) {
+        for ( PrintWriter writer : clientWriters.values()) {
             writer.println(message);
         }
     }
