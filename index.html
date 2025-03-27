@@ -3,18 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat-Anwendung</title>
-    <link rel="stylesheet" href="style.css">
+    <title>MultiChat</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        #chat { border: 1px solid #ccc; padding: 10px; width: 300px; height: 400px; overflow-y: scroll; }
+        #message { width: 80%; }
+        #send { width: 18%; }
+    </style>
 </head>
 <body>
-    <div class="chat-container">
-        <div id="chatOutput" class="chat-output"></div>
-        <div class="input-container">
-            <input type="text" id="chatMessage" class="input-field" placeholder="Nachricht eingeben...">
-            <button id="sendBtn" class="btn">Senden</button>
-        </div>
-        <div id="loadingContainer" class="d-none">AI denkt nach...</div>
-    </div>
-    <script src="chatgpt.js"></script>
+
+<h2>MultiChat</h2>
+<div id="chat"></div>
+<input type="text" id="message" placeholder="Nachricht eingeben...">
+<button id="send">Senden</button>
+
+<script>
+    const chat = document.getElementById('chat');
+    const messageInput = document.getElementById('message');
+    const sendButton = document.getElementById('send');
+
+    // WebSocket-Verbindung zum Server herstellen
+    const socket = new WebSocket('ws://localhost:8080/chat');
+
+    // Nachricht empfangen
+    socket.onmessage = function(event) {
+        const message = document.createElement('div');
+        message.textContent = event.data;
+        chat.appendChild(message);
+        chat.scrollTop = chat.scrollHeight; // Scrollen zum neuesten Beitrag
+    };
+
+    // Nachricht senden
+    sendButton.onclick = function() {
+        const message = messageInput.value;
+        if (message) {
+            socket.send(message);
+            messageInput.value = ''; // Eingabefeld leeren
+        }
+    };
+
+    // Verbindung schließen
+    socket.onclose = function() {
+        const message = document.createElement('div');
+        message.textContent = 'Verbindung zum Server geschlossen.';
+        chat.appendChild(message);
+    };
+</script>
+
 </body>
 </html>
