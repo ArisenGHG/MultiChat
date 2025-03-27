@@ -1,6 +1,3 @@
-import java.net.*;
-import java.io.*;
-
 public class MultiChatClient {
     private String hostname;
     private int port;
@@ -21,6 +18,7 @@ public class MultiChatClient {
             // Benutzername abfragen
             System.out.println(in.readLine()); // Nachricht vom Server, um den Benutzernamen einzugeben
             String benutzername = stdIn.readLine(); // Benutzername vom Benutzer einlesen
+            out.println(benutzername); // Benutzername an den Server senden
 
             // Thread zum Empfangen von Nachrichten
             new Thread(() -> {
@@ -42,7 +40,7 @@ public class MultiChatClient {
                 if (nachricht == null || nachricht.trim().isEmpty()) {
                     continue; // Leere Nachrichten ignorieren
                 } else {
-                    out.println(benutzername + ": " + nachricht); // Nachricht an den Server senden
+                    out.println(nachricht); // Nachricht an den Server senden
                 }
             }
         } catch (IOException e) {
