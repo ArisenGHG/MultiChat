@@ -1,3 +1,9 @@
+import java.net.Socket;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.io.IOException;
+
 public class MultiChatClient {
     private String hostname;
     private int port;
@@ -40,7 +46,7 @@ public class MultiChatClient {
                 if (nachricht == null || nachricht.trim().isEmpty()) {
                     continue; // Leere Nachrichten ignorieren
                 } else {
-                    out.println(nachricht); // Nachricht an den Server senden
+                    out.println(nachricht); // Nachricht an den Server senden (ohne Benutzernamen)
                 }
             }
         } catch (IOException e) {

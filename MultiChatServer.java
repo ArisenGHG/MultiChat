@@ -29,43 +29,43 @@ class ClientHandler implements Runnable {
         this.clientSocket = socket;
     }
 
-@Override
-public void run() {
-    try {
-        in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-        out = new PrintWriter(clientSocket.getOutputStream(), true);
-        clientWriters.put(clientSocket, out); 
-
-        // Benutzername abfragen
-        out.println("Bitte geben Sie Ihren Benutzernamen ein: ");
-        username = in.readLine();
-        System.out.println("Benutzername gesetzt: " + username);
-
-        String message;
-        while ((message = in.readLine()) != null) {
-            // Überprüfen, ob die Nachricht leer ist
-            if (message.trim().isEmpty()) {
-                continue; // Leere Nachrichten ignorieren
-            }
-            System.out.println("Nachricht von " + username + ": " + message);
-            broadcast(username + ": " + message); // Benutzername in der Nachricht
-        }
-    } catch (IOException e) {
-        System.out.println("Fehler bei der Kommunikation mit dem Client: " + e.getMessage());
-    } finally {
+    @Override
+    public void run() {
         try {
-            clientSocket.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        clientWriters.remove(clientSocket); 
-        System.out.println("Verbindung zu " + username + " beendet.");
-    }
-}
+            in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+            out = new PrintWriter(clientSocket.getOutputStream(), true);
+            clientWriters.put(clientSocket, out); 
 
-    private void broadcast(String message) {
-        for ( PrintWriter writer : clientWriters.values()) {
-            writer.println(message);
+            // Benutzername abfragen
+            out.println("Bitte geben Sie Ihren Benutzernamen ein: ");
+            username = in.readLine();
+            System.out.println("Benutzername gesetzt: " + username);
+
+            String message;
+            while ((message = in.readLine()) != null) {
+                // Überprüfen, ob die Nachricht leer ist
+                if (message.trim().isEmpty()) {
+                    continue; // Leere Nachrichten ignorieren
+                }
+                System.out.println("Nachricht von " + username + ": " + message);
+                broadcast(username, message); // Benutzername und Nachricht getrennt
+            }
+        } catch (IOException e) {
+            System.out.println("Fehler bei der Kommunikation mit dem Client: " + e.getMessage());
+        } finally {
+            try {
+                clientSocket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            clientWriters.remove(clientSocket); 
+            System.out.println("Verbindung zu " + username + " beendet.");
+        }
+    }
+
+    private void broadcast(String username, String message) {
+        for (PrintWriter writer : clientWriters.values()) {
+            writer.println(username + ": " + message + "."); // Benutzername wird hier hinzugefügt
         }
     }
 }
