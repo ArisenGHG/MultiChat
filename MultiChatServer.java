@@ -49,7 +49,7 @@ class MultiChatServer {
                 String message;
                 while ((message = in.readLine()) != null) {
                     System.out.println("Nachricht von " + username + ": " + message);
-                    broadcast(username + ": " + message); // Benutzername in der Nachricht
+                    broadcast(message); // Benutzername in der Nachricht
                 }
             } catch (IOException e) {
                 System.out.println("Fehler bei der Kommunikation mit dem Client: " + e.getMessage());
