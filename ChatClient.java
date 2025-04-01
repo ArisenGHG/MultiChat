@@ -1,56 +1,84 @@
-import java.net.*;
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.*;
+import java.net.*;
 
-/**
- * @author   Jonas, Jason
- * @version  2025-03-25
- */
-class ChatClient 
-{
-    public static void main(String[] args) throws IOException 
-    {
-        String serverName = null;
-        if (args.length > 0) {
-            serverName = args[0];
-        } else {
-            serverName = "localhost"; // oder die IP-Adresse des Servers
-        }
-        
-        System.out.println("Öffne Verbindung zu " + serverName + " auf Port 5001.");
-        Socket verbindung = new Socket(serverName, 5001);
+public class ChatClientGUI {
+    private static Socket socket;
+    private static PrintWriter out;
+    private static BufferedReader in;
+    private static JTextArea textArea;
+    private static JTextField textField;
+    private static String username;
 
-        PrintWriter ausgang = new PrintWriter(verbindung.getOutputStream(), true);
-        BufferedReader eingang = new BufferedReader(new InputStreamReader(verbindung.getInputStream()));
-        BufferedReader stdIn = new BufferedReader(new InputStreamReader(System.in));
-        
-        // Benutzernamen abfragen
-        System.out.print("Bitte geben Sie Ihren Benutzernamen ein: ");
-        String benutzername = stdIn.readLine();
-        
-        System.out.println("Verbunden mit " + verbindung.getInetAddress().getHostName() + ".");
+    public static void main(String[] args) {
+        String serverName = args.length > 0 ? args[0] : "localhost";
+        int port = 5001;
 
-        while (true) {
-            // Lesen von der Konsole und Schreiben auf den Socket
-            System.out.print(benutzername + ": ");
-            String nachricht = stdIn.readLine();
-            if (nachricht == null) {
-                break;
-            } else {
-                ausgang.println(benutzername + ": " + nachricht); // Benutzername in der Nachricht
+        JFrame frame = new JFrame("Chat Client");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setSize(400, 300);
+        frame.setLayout(new BorderLayout());
+
+        textArea = new JTextArea();
+        textArea.setEditable(false);
+        frame.add(new JScrollPane(textArea), BorderLayout.CENTER);
+
+        textField = new JTextField();
+        frame.add(textField, BorderLayout.SOUTH);
+
+        textField.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                sendMessage();
             }
+        });
 
-            // Lesen vom Socket und Schreiben auf die Konsole
-            if ((nachricht = eingang.readLine()) == null) {
-                break;
-            } else {
-                System.out.println(nachricht);
+        frame.setVisible(true);
+
+        try {
+            socket = new Socket(serverName, port);
+            out = new PrintWriter(socket.getOutputStream(), true);
+            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+
+            // Benutzername abfragen
+            username = JOptionPane.showInputDialog(frame, "Bitte geben Sie Ihren Benutzernamen ein:");
+            out.println(username);
+
+            // Thread zum Empfangen von Nachrichten
+            new Thread(new IncomingReader()).start();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void sendMessage() {
+        String message = textField.getText();
+        if (!message.isEmpty()) {
+            out.println(username + ": " + message);
+            textField.setText("");
+        }
+    }
+
+    private static class IncomingReader implements Runnable {
+        @Override
+        public void run() {
+            String message;
+            try {
+                while ((message = in.readLine()) != null) {
+                    textArea.append(message + "\n");
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            } finally {
+                try {
+                    socket.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         }
-        System.out.println("Verbindung beendet.");
-        
-        stdIn.close();
-        ausgang.close();
-        eingang.close();
-        verbindung.close();
     }
 }
