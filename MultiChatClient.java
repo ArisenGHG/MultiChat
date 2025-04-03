@@ -1,76 +1,98 @@
-import java.net.*;
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.*;
-import java.util.concurrent.*;
+import java.net.*;
 
-class MultiChatServer {
-    private static final int PORT = 5001;
-    private static final ExecutorService pool = Executors.newFixedThreadPool(10); 
-    private static final ConcurrentHashMap<Socket, PrintWriter> clientWriters = new ConcurrentHashMap<>();
+public class ChatClientGUI {
+    private static Socket socket;
+    private static PrintWriter out;
+    private static BufferedReader in;
+    private static JTextArea textArea;
+    private static JTextField textField;
+    private static String username;
 
-    public static void main(String[] args) throws IOException {
-        ServerSocket serverSocket = new ServerSocket(PORT);
-        System.out.println("Warte auf Verbindung auf Port " + PORT + ".");
+    public static void main(String[] args) {
+        String serverName = args.length > 0 ? args[0] : "localhost";
+        int port = 5001;
 
-        while (true) {
-            Socket clientSocket = serverSocket.accept();
-            System.out.println("Verbunden mit " + clientSocket.getInetAddress().getHostName() + ".");
-            pool.execute(new ClientHandler(clientSocket));         
+        JFrame frame = new JFrame("Chat Client");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setSize(400, 300);
+        frame.setLayout(new BorderLayout());
+
+        textArea = new JTextArea();
+        textArea.setEditable(false);
+        frame.add(new JScrollPane(textArea), BorderLayout.CENTER);
+
+        JPanel panel = new JPanel();
+        panel.setLayout(new BorderLayout());
+
+        textField = new JTextField();
+        panel.add(textField, BorderLayout.CENTER);
+
+        JButton sendButton = new JButton("Senden");
+        panel.add(sendButton, BorderLayout.EAST);
+
+        frame.add(panel, BorderLayout.SOUTH);
+
+        textField.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                sendMessage();
+            }
+        });
+
+        sendButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                sendMessage();
+            }
+        });
+
+        frame.setVisible(true);
+
+        try {
+            socket = new Socket(serverName, port);
+            out = new PrintWriter(socket.getOutputStream(), true);
+            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+
+            // Benutzername abfragen
+            username = JOptionPane.showInputDialog(frame, "Bitte geben Sie Ihren Benutzernamen ein:");
+            out.println(username);
+
+            // Thread zum Empfangen von Nachrichten
+            new Thread(new IncomingReader()).start();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
-    static class ClientHandler implements Runnable {
-        private Socket clientSocket;
-        private PrintWriter out;
-        private BufferedReader in;
-        private String username; // Benutzername des Clients
-
-        public ClientHandler(Socket socket) {
-            this.clientSocket = socket;
+    private static void sendMessage() {
+        String message = textField.getText();
+        if (!message.isEmpty()) {
+            out.println(username + ": " + message); // Benutzername wird hier hinzugefügt
+            textField.setText("");
         }
+    }
 
+    private static class IncomingReader implements Runnable {
         @Override
         public void run() {
+            String message;
             try {
-                in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-                out = new PrintWriter(clientSocket.getOutputStream(), true);
-                
-                // Benutzername abfragen
-                out.println("Bitte geben Sie Ihren Benutzernamen ein: ");
-                username = in.readLine();
-                
-                // Benutzername speichern
-                synchronized (clientWriters) {
-                    clientWriters.put(clientSocket, out);
-                }
-                
-                System.out.println("Benutzername gesetzt: " + username);
-                broadcast(username + " hat den Chat betreten."); // Nachricht, dass der Benutzer beigetreten ist
-
-                String message;
                 while ((message = in.readLine()) != null) {
-                    System.out.println("Nachricht von " + username + ": " + message);
-                    broadcast(message); // Benutzername in der Nachricht
+                    // Hier wird die Nachricht direkt angezeigt, ohne den Benutzernamen erneut hinzuzufügen
+                    textArea.append(message + "\n");
                 }
             } catch (IOException e) {
-                System.out.println("Fehler bei der Kommunikation mit dem Client: " + e.getMessage());
+                e.printStackTrace();
             } finally {
                 try {
-                    clientSocket.close();
+                    socket.close();
                 } catch (IOException e) {
                     e.printStackTrace();
-                }
-                synchronized (clientWriters) {
-                    clientWriters.remove(clientSocket); 
-                }
-                broadcast(username + " hat den Chat verlassen."); // Nachricht, dass der Benutzer den Chat verlassen hat
-                System.out.println("Verbindung zu " + username + " beendet.");
-            }
-        }
-
-        private void broadcast(String message) {
-            synchronized (clientWriters) {
-                for (PrintWriter writer : clientWriters.values()) {
-                    writer.println(message);
                 }
             }
         }
