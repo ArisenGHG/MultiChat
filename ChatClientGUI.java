@@ -26,10 +26,25 @@ public class ChatClientGUI {
         textArea.setEditable(false);
         frame.add(new JScrollPane(textArea), BorderLayout.CENTER);
 
+        JPanel panel = new JPanel();
+        panel.setLayout(new BorderLayout());
+
         textField = new JTextField();
-        frame.add(textField, BorderLayout.SOUTH);
+        panel.add(textField, BorderLayout.CENTER);
+
+        JButton sendButton = new JButton("Senden");
+        panel.add(sendButton, BorderLayout.EAST);
+
+        frame.add(panel, BorderLayout.SOUTH);
 
         textField.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                sendMessage();
+            }
+        });
+
+        sendButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 sendMessage();
@@ -57,7 +72,7 @@ public class ChatClientGUI {
     private static void sendMessage() {
         String message = textField.getText();
         if (!message.isEmpty()) {
-            out.println(username + ": " + message); // Benutzername wird hier hinzugefuegt
+            out.println(username + ": " + message); // Benutzername wird hier hinzugefügt
             textField.setText("");
         }
     }
@@ -68,7 +83,7 @@ public class ChatClientGUI {
             String message;
             try {
                 while ((message = in.readLine()) != null) {
-                    // Hier wird die Nachricht direkt angezeigt, ohne den Benutzernamen erneut hinzuzufuegen
+                    // Hier wird die Nachricht direkt angezeigt, ohne den Benutzernamen erneut hinzuzufügen
                     textArea.append(message + "\n");
                 }
             } catch (IOException e) {
