@@ -1,61 +1,78 @@
-import java.net.Socket;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.io.IOException;
+import java.net.*;
+import java.io.*;
+import java.util.concurrent.*;
 
-public class MultiChatClient {
-    private String hostname;
-    private int port;
-    private PrintWriter out;
-    private BufferedReader in;
+class MultiChatServer {
+    private static final int PORT = 5001;
+    private static final ExecutorService pool = Executors.newFixedThreadPool(10); 
+    private static final ConcurrentHashMap<Socket, PrintWriter> clientWriters = new ConcurrentHashMap<>();
 
-    public MultiChatClient(String hostname, int port) {
-        this.hostname = hostname;
-        this.port = port;
-    }
+    public static void main(String[] args) throws IOException {
+        ServerSocket serverSocket = new ServerSocket(PORT);
+        System.out.println("Warte auf Verbindung auf Port " + PORT + ".");
 
-    public void start() {
-        try (Socket socket = new Socket(hostname, port)) {
-            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            out = new PrintWriter(socket.getOutputStream(), true);
-            BufferedReader stdIn = new BufferedReader(new InputStreamReader(System.in));
-
-            // Benutzername abfragen
-            System.out.println(in.readLine()); // Nachricht vom Server, um den Benutzernamen einzugeben
-            String benutzername = stdIn.readLine(); // Benutzername vom Benutzer einlesen
-            out.println(benutzername); // Benutzername an den Server senden
-
-            // Thread zum Empfangen von Nachrichten
-            new Thread(() -> {
-                try {
-                    String nachricht;
-                    while ((nachricht = in.readLine()) != null) {
-                        System.out.println(nachricht); // Nachricht auf der Konsole ausgeben
-                    }
-                } catch (IOException e) {
-                    System.out.println("Fehler beim Lesen von Nachrichten: " + e.getMessage());
-                }
-            }).start();
-
-            // Hauptschleife zum Senden von Nachrichten
-            String nachricht;
-            while (true) {
-                System.out.print(benutzername + ": ");
-                nachricht = stdIn.readLine();
-                if (nachricht == null || nachricht.trim().isEmpty()) {
-                    continue; // Leere Nachrichten ignorieren
-                } else {
-                    out.println(nachricht); // Nachricht an den Server senden (ohne Benutzernamen)
-                }
-            }
-        } catch (IOException e) {
-            System.out.println("Fehler beim Verbinden zum Server: " + e.getMessage());
+        while (true) {
+            Socket clientSocket = serverSocket.accept();
+            System.out.println("Verbunden mit " + clientSocket.getInetAddress().getHostName() + ".");
+            pool.execute(new ClientHandler(clientSocket));         
         }
     }
 
-    public static void main(String[] args) {
-        MultiChatClient client = new MultiChatClient("localhost", 5001); // Serveradresse und Port
-        client.start();
+    static class ClientHandler implements Runnable {
+        private Socket clientSocket;
+        private PrintWriter out;
+        private BufferedReader in;
+        private String username; // Benutzername des Clients
+
+        public ClientHandler(Socket socket) {
+            this.clientSocket = socket;
+        }
+
+        @Override
+        public void run() {
+            try {
+                in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+                out = new PrintWriter(clientSocket.getOutputStream(), true);
+                
+                // Benutzername abfragen
+                out.println("Bitte geben Sie Ihren Benutzernamen ein: ");
+                username = in.readLine();
+                
+                // Benutzername speichern
+                synchronized (clientWriters) {
+                    clientWriters.put(clientSocket, out);
+                }
+                
+                System.out.println("Benutzername gesetzt: " + username);
+                broadcast(username + " hat den Chat betreten."); // Nachricht, dass der Benutzer beigetreten ist
+
+                String message;
+                while ((message = in.readLine()) != null) {
+                    System.out.println("Nachricht von " + username + ": " + message);
+                    broadcast(message); // Benutzername in der Nachricht
+                }
+            } catch (IOException e) {
+                System.out.println("Fehler bei der Kommunikation mit dem Client: " + e.getMessage());
+            } finally {
+                try {
+                    clientSocket.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                synchronized (clientWriters) {
+                    clientWriters.remove(clientSocket); 
+                }
+                broadcast(username + " hat den Chat verlassen."); // Nachricht, dass der Benutzer den Chat verlassen hat
+                System.out.println("Verbindung zu " + username + " beendet.");
+            }
+        }
+
+        private void broadcast(String message) {
+            synchronized (clientWriters) {
+                for (PrintWriter writer : clientWriters.values()) {
+                    writer.println(message);
+                }
+            }
+        }
     }
 }
