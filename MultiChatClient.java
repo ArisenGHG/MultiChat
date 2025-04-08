@@ -14,7 +14,7 @@ public class MultiChatClient {
     private static JTextArea textArea;
     private static JTextField textField;
     private static String username;
-    private static final String CLIENT_VERSION = "1.0"; // Client-Version
+    private static final String CLIENT_VERSION = "1.1"; // Client-Version
     private static final int USERNAME_LIMIT = 20; // Zeichenlimit für den Benutzernamen
     private static final int MESSAGE_LIMIT = 1000; // Zeichenlimit für die Nachricht
 
@@ -81,7 +81,7 @@ public class MultiChatClient {
 
             // Überprüfen, ob die Verbindung erfolgreich war
             String serverResponse = in.readLine();
-            if (serverResponse != null && serverResponse.startsWith("Version nicht kompatibel")) {
+            if (serverResponse != null && serverResponse.startsWith("Version nicht")) {
                 JOptionPane.showMessageDialog(frame, serverResponse, "Fehler", JOptionPane.ERROR_MESSAGE);
                 socket.close();
                 return;

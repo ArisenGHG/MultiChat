@@ -6,7 +6,7 @@ class MultiChatServer {
     private static final int PORT = 5001;
     private static final ExecutorService pool = Executors.newFixedThreadPool(10);
     private static final ConcurrentHashMap<Socket, PrintWriter> clientWriters = new ConcurrentHashMap<>();
-    private static final String EXPECTED_VERSION = "1.0"; // Erwartete Version
+    private static final String EXPECTED_VERSION = "1.1"; // Erwartete Version
     private static final int USERNAME_LIMIT = 20; // Zeichenlimit für den Benutzernamen
     private static final int MESSAGE_LIMIT = 1000; // Zeichenlimit für die Nachricht
 
@@ -42,7 +42,7 @@ class MultiChatServer {
                 // Version vom Client empfangen
                 String clientVersion = in.readLine();
                 if (!clientVersion.equals(EXPECTED_VERSION)) {
-                    out.println("Version nicht kompatibel. Erforderlich: " + EXPECTED_VERSION);
+                    out.println("Version nicht kompatibel. Erforderlich: " + EXPECTED_VERSION + "." + "" + "Neue Version unter https://github.com/ArisenGHG/MultiChat.");
                     clientSocket.close();
                     return;
                 }
