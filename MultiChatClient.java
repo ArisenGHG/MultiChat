@@ -2,6 +2,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.io.*;
 import java.net.*;
 
@@ -53,6 +55,16 @@ public class MultiChatClient {
             }
         });
 
+        // KeyListener hinzufügen, um die Eingabe zu überwachen
+        textField.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyTyped(KeyEvent e) {
+                if (textField.getText().length() >= MESSAGE_LIMIT) {
+                    e.consume(); // Verhindert weitere Eingaben, wenn das Limit erreicht ist
+                }
+            }
+        });
+
         frame.setVisible(true);
 
         try {
@@ -80,7 +92,7 @@ public class MultiChatClient {
             message = message.substring(0, MESSAGE_LIMIT); // Kürze die Nachricht, falls sie zu lang ist
         }
         if (!message.isEmpty()) {
-            out.println(username + ": " + message); // Benutzername wird hier hinzugefügt
+            out.println(message); // Benutzername wird hier hinzugefügt
             textField.setText("");
         }
     }
