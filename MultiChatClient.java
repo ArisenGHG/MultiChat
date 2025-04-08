@@ -5,7 +5,7 @@ import java.awt.event.ActionListener;
 import java.io.*;
 import java.net.*;
 
-public class ChatClientGUI {
+public class MultiChatClient {
     private static Socket socket;
     private static PrintWriter out;
     private static BufferedReader in;
