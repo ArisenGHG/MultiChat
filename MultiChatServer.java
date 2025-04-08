@@ -6,6 +6,8 @@ class MultiChatServer {
     private static final int PORT = 5001;
     private static final ExecutorService pool = Executors.newFixedThreadPool(10); 
     private static final ConcurrentHashMap<Socket, PrintWriter> clientWriters = new ConcurrentHashMap<>();
+    private static final int USERNAME_LIMIT = 20; // Zeichenlimit für den Benutzernamen
+    private static final int MESSAGE_LIMIT = 100; // Zeichenlimit für die Nachricht
 
     public static void main(String[] args) throws IOException {
         ServerSocket serverSocket = new ServerSocket(PORT);
@@ -35,8 +37,13 @@ class MultiChatServer {
                 out = new PrintWriter(clientSocket.getOutputStream(), true);
                 
                 // Benutzername abfragen
-                out.println("Bitte geben Sie Ihren Benutzernamen ein: ");
+                out.println("Bitte geben Sie Ihren Benutzernamen ein (max. " + USERNAME_LIMIT + " Zeichen): ");
                 username = in.readLine();
+                
+                // Benutzername auf das Limit beschränken
+                if (username.length() > USERNAME_LIMIT) {
+                    username = username.substring(0, USERNAME_LIMIT); // Kürze den Benutzernamen
+                }
                 
                 // Benutzername speichern
                 synchronized (clientWriters) {
@@ -48,8 +55,12 @@ class MultiChatServer {
 
                 String message;
                 while ((message = in.readLine()) != null) {
+                    // Nachricht auf das Limit beschränken
+                    if (message.length() > MESSAGE_LIMIT) {
+                        message = message.substring(0, MESSAGE_LIMIT); // Kürze die Nachricht
+                    }
                     System.out.println("Nachricht von " + username + ": " + message);
-                    broadcast(message); // Benutzername in der Nachricht
+                    broadcast(username + ": " + message); // Benutzername in der Nachricht
                 }
             } catch (IOException e) {
                 System.out.println("Fehler bei der Kommunikation mit dem Client: " + e.getMessage());

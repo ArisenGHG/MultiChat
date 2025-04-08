@@ -12,6 +12,8 @@ public class ChatClientGUI {
     private static JTextArea textArea;
     private static JTextField textField;
     private static String username;
+    private static final int USERNAME_LIMIT = 20; // Zeichenlimit für den Benutzernamen
+    private static final int MESSAGE_LIMIT = 100; // Zeichenlimit für die Nachricht
 
     public static void main(String[] args) {
         String serverName = args.length > 0 ? args[0] : "localhost";
@@ -59,7 +61,10 @@ public class ChatClientGUI {
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
             // Benutzername abfragen
-            username = JOptionPane.showInputDialog(frame, "Bitte geben Sie Ihren Benutzernamen ein:");
+            username = JOptionPane.showInputDialog(frame, "Bitte geben Sie Ihren Benutzernamen ein (max. " + USERNAME_LIMIT + " Zeichen):");
+            if (username.length() > USERNAME_LIMIT) {
+                username = username.substring(0, USERNAME_LIMIT); // Kürze den Benutzernamen, falls er zu lang ist
+            }
             out.println(username);
 
             // Thread zum Empfangen von Nachrichten
@@ -71,6 +76,9 @@ public class ChatClientGUI {
 
     private static void sendMessage() {
         String message = textField.getText();
+        if (message.length() > MESSAGE_LIMIT) {
+            message = message.substring(0, MESSAGE_LIMIT); // Kürze die Nachricht, falls sie zu lang ist
+        }
         if (!message.isEmpty()) {
             out.println(username + ": " + message); // Benutzername wird hier hinzugefügt
             textField.setText("");
