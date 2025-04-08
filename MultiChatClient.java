@@ -14,8 +14,9 @@ public class MultiChatClient {
     private static JTextArea textArea;
     private static JTextField textField;
     private static String username;
+    private static final String CLIENT_VERSION = "1.0"; // Client-Version
     private static final int USERNAME_LIMIT = 20; // Zeichenlimit für den Benutzernamen
-    private static final int MESSAGE_LIMIT = 100; // Zeichenlimit für die Nachricht
+    private static final int MESSAGE_LIMIT = 1000; // Zeichenlimit für die Nachricht
 
     public static void main(String[] args) {
         String serverName = args.length > 0 ? args[0] : "localhost";
@@ -41,17 +42,20 @@ public class MultiChatClient {
 
         frame.add(panel, BorderLayout.SOUTH);
 
-        textField.addActionListener(new ActionListener() {
+        sendButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 sendMessage();
             }
         });
 
-        sendButton.addActionListener(new ActionListener() {
+        // KeyListener hinzufügen, um die Eingabe zu überwachen
+        textField.addKeyListener(new KeyAdapter() {
             @Override
-            public void actionPerformed(ActionEvent e) {
-                sendMessage();
+            public void keyTyped(KeyEvent e) {
+                if (textField.getText().length() >= MESSAGE_LIMIT) {
+                    e.consume(); // Verhindert weitere Eingaben, wenn das Limit erreicht ist
+                }
             }
         });
 
@@ -71,6 +75,17 @@ public class MultiChatClient {
             socket = new Socket(serverName, port);
             out = new PrintWriter(socket.getOutputStream(), true);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+
+            // Client-Version an den Server senden
+            out.println(CLIENT_VERSION);
+
+            // Überprüfen, ob die Verbindung erfolgreich war
+            String serverResponse = in.readLine();
+            if (serverResponse != null && serverResponse.startsWith("Version nicht kompatibel")) {
+                JOptionPane.showMessageDialog(frame, serverResponse, "Fehler", JOptionPane.ERROR_MESSAGE);
+                socket.close();
+                return;
+            }
 
             // Benutzername abfragen
             username = JOptionPane.showInputDialog(frame, "Bitte geben Sie Ihren Benutzernamen ein (max. " + USERNAME_LIMIT + " Zeichen):");
